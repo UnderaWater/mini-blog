@@ -1,7 +1,45 @@
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
+import { GraphQLClient, gql } from 'graphql-request';
+import BlogCard from '../components/BlogCard';
 
-export default function Home() {
+const graphcms = new GraphQLClient(`https://api-eu-central-1.graphcms.com/v2/cl4y1ijdh0xll01tad41zapgc/master`);
+
+const QUERY = gql`
+{
+  posts{
+    id,
+    title,
+    datePublished,
+    slug,
+    content{
+      html
+    }
+    author{
+      name,
+      avatar{
+        url
+      }
+    }
+    coverPhoto{
+      url
+    }
+  }
+}
+`
+
+export async function getStaticProps() {
+  const {posts} = await graphcms.request(QUERY);
+  return {
+    props: {
+      posts,
+    },
+    revalidate: 10,
+  };
+};
+
+export default function Home({ posts }) {
+  console.log(posts);
   return (
     <div className={styles.container}>
       <Head>
@@ -11,7 +49,15 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
-
+        {posts.map(post => (
+          <BlogCard
+          title={post.title}
+          author={post.author}
+          coverPhoto={post.coverPhoto}
+          key={post.id}
+          datePublished={post.datePublished}
+          slug={post.slug} />
+        ))}
       </main>
     </div>
   )
